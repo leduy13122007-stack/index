@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StrokeGuard - Family Stroke Risk Assessment</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:#f5f7fb;color:#1f2937}
+.hero{background:linear-gradient(135deg,#0f4c81,#2563eb);color:white;padding:90px 20px;text-align:center}
+.hero h1{font-size:56px;margin:0}
+.hero p{max-width:760px;margin:20px auto;font-size:18px;line-height:1.6}
+.btn{background:white;color:#0f4c81;border:none;padding:14px 28px;border-radius:999px;font-weight:700;cursor:pointer}
+.container{max-width:1100px;margin:auto;padding:24px}
+.card{background:white;border-radius:18px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,.08);margin:20px 0}
+.step{display:none}
+.active{display:block}
+label{display:block;margin-top:14px;font-weight:600}
+input,select{width:100%;padding:12px;margin-top:6px;border:1px solid #d1d5db;border-radius:10px}
+.progress{height:12px;background:#e5e7eb;border-radius:99px;overflow:hidden}
+.bar{height:100%;width:0;background:#2563eb;transition:.4s}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:18px}
+.metric{background:#eef4ff;border-radius:14px;padding:18px;text-align:center}
+.gauge{font-size:42px;font-weight:800}
+.low{color:#16a34a}.moderate{color:#f59e0b}.high{color:#dc2626}
+.center{text-align:center}
+ol li{margin:8px 0}
+</style>
+</head>
+<body>
+
+<section class="hero">
+<h1>StrokeGuard</h1>
+<p>Protect Your Family Before It's Too Late. Assess stroke-related risk factors for yourself and your loved ones, identify who may need attention first, and explore a family-centered health monitoring solution.</p>
+<button class="btn" onclick="go('you',25)">Start Assessment</button>
+</section>
+
+<div class="container">
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<div id="you" class="card step">
+<h2>Step 1 — Your Information</h2>
+<div id="youForm"></div>
+<button class="btn" onclick="saveYou()">Continue</button>
+</div>
+
+<div id="father" class="card step">
+<h2>Step 2 — Father Information</h2>
+<div id="fatherForm"></div>
+<button class="btn" onclick="saveFather()">Continue</button>
+</div>
+
+<div id="mother" class="card step">
+<h2>Step 3 — Mother Information</h2>
+<div id="motherForm"></div>
+<button class="btn" onclick="saveMother()">Generate Dashboard</button>
+</div>
+
+<div id="dashboard" class="step">
+
+<div class="card">
+<h2>Family Health Dashboard</h2>
+<canvas id="riskChart"></canvas>
+</div>
+
+<div class="grid">
+<div class="metric">
+<h3>Family Health Score</h3>
+<div class="gauge" id="familyScore">0</div>
+</div>
+
+<div class="metric">
+<h3>Priority Person</h3>
+<div id="priorityPerson"></div>
+</div>
+
+<div class="metric">
+<h3>Recommended Package</h3>
+<div id="package"></div>
+</div>
+</div>
+
+<div class="card">
+<h3>Risk Ranking</h3>
+<div id="ranking"></div>
+</div>
+
+<div class="card">
+<h3>How StrokeGuard Works</h3>
+<p>
+Raise Both Arms → Motion Sensors Measure Angle Difference → AI Analysis → Initial Risk Screening Result
+</p>
+</div>
+
+<div class="card">
+<h3>Future Vision</h3>
+<ul>
+<li>Stroke Risk Screening</li>
+<li>Remote Family Monitoring</li>
+<li>Fall Detection</li>
+<li>Health Analytics Dashboard</li>
+</ul>
+</div>
+
+</div>
+</div>
+
+<script>
+function build(id,p){
+document.getElementById(id).innerHTML=`
+<label>Age<input type="number" id="${p}_age"></label>
+<label>Height (cm)<input type="number" id="${p}_h"></label>
+<label>Weight (kg)<input type="number" id="${p}_w"></label>
+
+<label>High Blood Pressure?
+<select id="${p}_bp"><option value="0">No</option><option value="3">Yes</option></select></label>
+
+<label>Diabetes?
+<select id="${p}_dia"><option value="0">No</option><option value="2">Yes</option></select></label>
+
+<label>Smoking?
+<select id="${p}_smoke"><option value="0">No</option><option value="2">Yes</option></select></label>
+
+<label>Stress Level
+<select id="${p}_stress"><option value="0">Low</option><option value="1">Moderate</option><option value="2">High</option></select></label>
+
+<label>Exercise Frequency
+<select id="${p}_ex"><option value="0">4+ times/week</option><option value="1">1-3 times/week</option><option value="2">Rarely</option></select></label>
+`;
+}
+
+build("youForm","y");
+build("fatherForm","f");
+build("motherForm","m");
+
+let data={};
+
+function go(id,p){
+document.querySelectorAll(".step").forEach(x=>x.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+document.getElementById("bar").style.width=p+"%";
+window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function calc(p){
+let s=0;
+let age=+document.getElementById(p+"_age").value||0;
+
+if(age>60)s+=4;
+else if(age>45)s+=2;
+
+["bp","dia","smoke","stress","ex"].forEach(f=>{
+s+= +document.getElementById(p+"_"+f).value;
+});
+
+let h=+document.getElementById(p+"_h").value||0;
+let w=+document.getElementById(p+"_w").value||0;
+
+if(h&&w){
+let bmi=w/((h/100)*(h/100));
+if(bmi>=30)s+=2;
+else if(bmi>=25)s+=1;
+}
+return s;
+}
+
+function saveYou(){data.you=calc("y");go("father",50);}
+function saveFather(){data.father=calc("f");go("mother",75);}
+function saveMother(){data.mother=calc("m");showDashboard();}
+
+function risk(score){
+if(score<=5)return "Low";
+if(score<=10)return "Moderate";
+return "High";
+}
+
+function showDashboard(){
+
+go("dashboard",100);
+
+new Chart(document.getElementById("riskChart"),{
+type:"bar",
+data:{
+labels:["You","Father","Mother"],
+datasets:[{
+label:"Risk Score",
+data:[data.you,data.father,data.mother]
+}]
+}
+});
+
+let members=[
+{name:"You",score:data.you},
+{name:"Father",score:data.father},
+{name:"Mother",score:data.mother}
+];
+
+members.sort((a,b)=>b.score-a.score);
+
+document.getElementById("ranking").innerHTML=
+"<ol>"+members.map(x=>`<li>${x.name} — ${risk(x.score)} Risk (${x.score})</li>`).join("")+"</ol>";
+
+document.getElementById("priorityPerson").innerHTML=
+"<strong>"+members[0].name+"</strong><br>"+risk(members[0].score)+" Risk";
+
+let score=Math.max(0,100-Math.round((data.you+data.father+data.mother)*2));
+document.getElementById("familyScore").innerText=score+"/100";
+
+let pkg="Personal Package";
+if(data.father>=8 || data.mother>=8) pkg="Parent Protection Package";
+if(data.father>=8 && data.mother>=8) pkg="Family Package";
+if(data.you>=8 && data.father>=8 && data.mother>=8) pkg="Full Family Package";
+
+document.getElementById("package").innerHTML="<strong>"+pkg+"</strong>";
+}
+</script>
+</body>
+</html>
