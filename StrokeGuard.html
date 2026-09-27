@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StrokeGuard — Early Stroke Risk Screening for Your Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    box-sizing:border-box;
+    --ink:#0B2545;
+    --ink-soft:#3B5279;
+    --blue-700:#1439A6;
+    --blue-600:#1D5FE0;
+    --blue-500:#2E6FF2;
+    --blue-100:#E7EFFE;
+    --blue-050:#F5F9FF;
+    --white:#FFFFFF;
+    --line:#DCE6F7;
+    --low:#128A5E;
+    --low-bg:#E6F7F0;
+    --med:#B8790C;
+    --med-bg:#FFF3DF;
+    --high:#C22B3A;
+    --high-bg:#FDE7E9;
+    --shadow: 0 20px 40px -24px rgba(20,57,166,.28);
+    --radius-lg:28px;
+    --radius-md:18px;
+    --radius-sm:10px;
+    --bg:#FBFCFF;
+    --card:#FFFFFF;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  :root:not([data-theme="light"]) {}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#EAF1FF;
+      --ink-soft:#AFC2E8;
+      --bg:#0A1226;
+      --card:#101B36;
+      --line:#1E2C4E;
+      --blue-100:#16264D;
+      --blue-050:#0D1830;
+      --white:#101B36;
+      --low-bg:#0E2A22;
+      --med-bg:#33260C;
+      --high-bg:#3A1420;
+      --shadow: 0 20px 40px -24px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#EAF1FF; --ink-soft:#AFC2E8; --bg:#0A1226; --card:#101B36; --line:#1E2C4E;
+    --blue-100:#16264D; --blue-050:#0D1830; --white:#101B36;
+    --low-bg:#0E2A22; --med-bg:#33260C; --high-bg:#3A1420;
+    --shadow: 0 20px 40px -24px rgba(0,0,0,.6);
+  }
+  html{scroll-behavior:smooth; scroll-padding-top: calc(84px + env(safe-area-inset-top,0px));}
+  *,*::before,*::after{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,.display{ font-family:'Manrope', 'Inter', sans-serif; letter-spacing:-0.015em; }
+  img,svg{max-width:100%;}
+  .wrap{max-width:1160px; margin:0 auto; padding:0 24px;}
+  a{color:inherit;}
+  button{font-family:inherit;}
+
+  /* ---------- NAV ---------- */
+  header.nav{
+    position:sticky; top:0; z-index:100;
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+    padding-top:env(safe-area-inset-top,0px);
+  }
+  .nav-inner{
+    max-width:1160px; margin:0 auto; padding:14px 24px;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; font-size:1.15rem; color:var(--ink);}
+  .brand-mark{width:34px; height:34px; flex:0 0 auto;}
+  .nav-links{display:flex; gap:28px; list-style:none; margin:0; padding:0;}
+  .nav-links a{font-size:.94rem; font-weight:600; color:var(--ink-soft); text-decoration:none; transition:color .15s;}
+  .nav-links a:hover{color:var(--blue-600);}
+  .nav-cta{
+    background:var(--blue-600); color:#fff; border:none; padding:11px 20px; border-radius:999px;
+    font-weight:700; font-size:.92rem; cursor:pointer; transition:transform .15s, box-shadow .15s;
+    box-shadow:0 8px 18px -8px rgba(29,95,224,.6);
+  }
+  .nav-cta:hover{transform:translateY(-1px);}
+  .nav-toggle{display:none; background:none; border:none; padding:6px; cursor:pointer;}
+  .nav-toggle span{display:block; width:22px; height:2px; background:var(--ink); margin:5px 0; border-radius:2px;}
+  @media (max-width: 860px){
+    .nav-links{
+      position:fixed; inset:64px 16px auto 16px; background:var(--card); border:1px solid var(--line);
+      border-radius:var(--radius-md); flex-direction:column; padding:14px 20px; gap:16px;
+      box-shadow:var(--shadow); transform-origin:top; transform:scaleY(0); opacity:0; pointer-events:none;
+      transition:transform .18s ease, opacity .18s ease;
+    }
+    .nav-links.open{transform:scaleY(1); opacity:1; pointer-events:auto;}
+    .nav-toggle{display:block;}
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative; padding:76px 0 60px; overflow:hidden;
+    background:
+      radial-gradient(1100px 520px at 78% -10%, var(--blue-100), transparent 60%),
+      var(--bg);
+  }
+  .hero-inner{display:grid; grid-template-columns:1.05fr .95fr; gap:48px; align-items:center;}
+  .eyebrow-pill{
+    display:inline-flex; align-items:center; gap:8px; background:var(--blue-100); color:var(--blue-600);
+    font-weight:700; font-size:.82rem; padding:7px 14px 7px 10px; border-radius:999px; margin-bottom:20px;
+  }
+  .eyebrow-pill .dot{width:7px; height:7px; border-radius:50%; background:var(--blue-500);}
+  h1.hero-title{font-size:clamp(2.3rem, 4.6vw, 3.6rem); line-height:1.06; font-weight:800; margin:0 0 20px; color:var(--ink);}
+  .hero-sub{font-size:1.16rem; line-height:1.6; color:var(--ink-soft); max-width:520px; margin:0 0 32px;}
+  .hero-actions{display:flex; gap:14px; flex-wrap:wrap;}
+  .btn{
+    border:none; cursor:pointer; font-weight:700; border-radius:999px; padding:15px 28px; font-size:1rem;
+    transition:transform .15s, box-shadow .15s, background .15s;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .btn-primary{background:var(--blue-600); color:#fff; box-shadow:0 12px 24px -10px rgba(29,95,224,.55);}
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 16px 28px -10px rgba(29,95,224,.65);}
+  .btn-ghost{background:transparent; color:var(--ink); border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--blue-500); color:var(--blue-600);}
+  .hero-stats{display:flex; gap:28px; margin-top:44px; flex-wrap:wrap;}
+  .hero-stat b{display:block; font-family:'Manrope'; font-size:1.6rem; font-weight:800; color:var(--ink);}
+  .hero-stat span{font-size:.85rem; color:var(--ink-soft);}
+
+  .hero-art{position:relative; display:flex; align-items:center; justify-content:center;}
+  .device-card{
+    position:relative; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); padding:30px; width:100%; max-width:400px;
+  }
+  .pulse-line{width:100%; height:70px; display:block;}
+  .device-badges{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .device-badge{background:var(--blue-050); color:var(--blue-600); font-weight:700; font-size:.78rem; padding:6px 12px; border-radius:999px; border:1px solid var(--blue-100);}
+  .float-chip{
+    position:absolute; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 16px;
+    box-shadow:var(--shadow); display:flex; align-items:center; gap:10px; font-weight:700; font-size:.85rem;
+  }
+  .float-chip.a{top:-6%; left:-8%;}
+  .float-chip.b{bottom:2%; right:-10%;}
+  .float-chip svg{width:20px; height:20px; flex:0 0 auto;}
+  @media (max-width:940px){
+    .hero-inner{grid-template-columns:1fr;}
+    .hero-art{order:-1;}
+    .float-chip{display:none;}
+  }
+
+  /* ---------- SECTION shells ---------- */
+  section{padding:88px 0;}
+  .section-head{max-width:640px; margin:0 0 48px;}
+  .section-head.center{margin-left:auto; margin-right:auto; text-align:center;}
+  .kicker{color:var(--blue-600); font-weight:700; font-size:.85rem; margin:0 0 10px;}
+  .section-head h2{font-size:clamp(1.7rem,3vw,2.4rem); font-weight:800; margin:0 0 14px; color:var(--ink);}
+  .section-head p{font-size:1.05rem; color:var(--ink-soft); line-height:1.65; margin:0;}
+  #problem{background:var(--blue-050);}
+
+  /* ---------- CARD GRID generic ---------- */
+  .grid{display:grid; gap:22px;}
+  .grid-4{grid-template-columns:repeat(4,1fr);}
+  .grid-3{grid-template-columns:repeat(3,1fr);}
+  .grid-2{grid-template-columns:repeat(2,1fr);}
+  @media (max-width:960px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(1,1fr);} .grid-2{grid-template-columns:1fr;} }
+  @media (max-width:560px){ .grid-4{grid-template-columns:1fr;} }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius-md); padding:26px;
+  }
+  .stat-card b{display:block; font-family:'Manrope'; font-size:2rem; font-weight:800; color:var(--blue-600); margin-bottom:6px;}
+  .stat-card p{margin:0; color:var(--ink-soft); font-size:.94rem; line-height:1.55;}
+  .icon-badge{
+    width:46px; height:46px; border-radius:14px; background:var(--blue-100); color:var(--blue-600);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  .icon-badge svg{width:22px; height:22px;}
+
+  /* ---------- WORKFLOW ---------- */
+  .workflow{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; align-items:stretch; margin-top:8px;}
+  .flow-step{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius-md); padding:24px 20px;
+    position:relative; text-align:left;
+  }
+  .flow-num{
+    width:30px; height:30px; border-radius:9px; background:var(--ink); color:#fff; font-family:'Manrope';
+    font-weight:800; font-size:.9rem; display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+  }
+  .flow-step h4{margin:0 0 6px; font-size:1.02rem; color:var(--ink);}
+  .flow-step p{margin:0; font-size:.88rem; color:var(--ink-soft); line-height:1.5;}
+  .flow-arrow{display:none; align-items:center; justify-content:center; color:var(--line);}
+  @media (min-width:760px){
+    .workflow{grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;}
+    .flow-arrow{display:flex;}
+  }
+  @media (max-width:759px){ .workflow{grid-template-columns:1fr;} }
+
+  .device-feature-row{display:grid; grid-template-columns:1.1fr .9fr; gap:44px; align-items:center; margin-top:56px;}
+  @media (max-width:860px){ .device-feature-row{grid-template-columns:1fr;} }
+  .feature-list{list-style:none; margin:0; padding:0; display:grid; gap:16px;}
+  .feature-list li{display:flex; gap:14px; align-items:flex-start;}
+  .feature-list .icon-badge{margin-bottom:0; flex:0 0 auto;}
+  .feature-list h5{margin:0 0 4px; font-size:1rem; color:var(--ink);}
+  .feature-list p{margin:0; font-size:.9rem; color:var(--ink-soft);}
+
+  /* ---------- ASSESSMENT ---------- */
+  #assessment{background:var(--blue-050);}
+  .progress-rail{display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:40px; flex-wrap:wrap;}
+  .progress-dot{
+    display:flex; align-items:center; gap:8px; padding:8px 14px 8px 8px; border-radius:999px;
+    background:var(--card); border:1px solid var(--line); font-size:.85rem; font-weight:700; color:var(--ink-soft);
+    transition:all .2s;
+  }
+  .progress-dot .num{width:22px; height:22px; border-radius:50%; background:var(--line); color:var(--ink-soft); display:flex; align-items:center; justify-content:center; font-size:.75rem;}
+  .progress-dot.active{background:var(--blue-600); color:#fff; border-color:var(--blue-600);}
+  .progress-dot.active .num{background:rgba(255,255,255,.25); color:#fff;}
+  .progress-dot.done{color:var(--blue-600); border-color:var(--blue-100);}
+  .progress-dot.done .num{background:var(--blue-100); color:var(--blue-600);}
+  .progress-connector{width:22px; height:1px; background:var(--line);}
+
+  .assessment-panel{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    padding:44px; max-width:760px; margin:0 auto;
+  }
+  @media (max-width:640px){ .assessment-panel{padding:28px 20px;} }
+  .panel-hidden{display:none;}
+  .panel-heading{margin:0 0 6px; font-size:1.4rem; color:var(--ink);}
+  .panel-sub{margin:0 0 30px; color:var(--ink-soft); font-size:.95rem;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+  @media (max-width:600px){ .form-grid{grid-template-columns:1fr;} }
+  .field{display:flex; flex-direction:column; gap:7px;}
+  .field.full{grid-column:1 / -1;}
+  .field label{font-size:.86rem; font-weight:700; color:var(--ink);}
+  .field .hint{font-size:.76rem; color:var(--ink-soft); font-weight:400; margin-top:-3px;}
+  .field input[type=number], .field input[type=text], .field select{
+    border:1.5px solid var(--line); border-radius:var(--radius-sm); padding:12px 14px; font-size:.95rem;
+    background:var(--bg); color:var(--ink); font-family:inherit; outline:none; transition:border-color .15s;
+  }
+  .field input:focus, .field select:focus{border-color:var(--blue-500);}
+  .seg{display:flex; border:1.5px solid var(--line); border-radius:var(--radius-sm); overflow:hidden;}
+  .seg button{
+    flex:1; border:none; background:var(--bg); color:var(--ink-soft); padding:11px 10px; font-size:.86rem;
+    font-weight:700; cursor:pointer; border-right:1px solid var(--line);
+  }
+  .seg button:last-child{border-right:none;}
+  .seg button.selected{background:var(--blue-600); color:#fff;}
+  .panel-actions{display:flex; justify-content:flex-end; gap:12px; margin-top:34px;}
+  .form-error{color:var(--high); font-size:.85rem; font-weight:600; margin-top:-16px; margin-bottom:16px; display:none;}
+
+  /* result view */
+  .result-head{display:flex; align-items:center; gap:18px; margin-bottom:26px; flex-wrap:wrap;}
+  .risk-ring{
+    width:96px; height:96px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-family:'Manrope'; font-weight:800; font-size:1.5rem; flex:0 0 auto; position:relative;
+  }
+  .risk-ring span{position:relative; z-index:1;}
+  .result-name{font-size:.85rem; font-weight:700; color:var(--blue-600); margin:0 0 4px;}
+  .result-title{font-size:1.35rem; margin:0 0 4px; color:var(--ink);}
+  .result-score{font-size:.9rem; color:var(--ink-soft); margin:0;}
+  .badge-pill{display:inline-flex; padding:4px 12px; border-radius:999px; font-size:.8rem; font-weight:800; margin-top:6px;}
+  .result-explain{background:var(--blue-050); border-radius:var(--radius-md); padding:20px 22px; margin-bottom:22px; font-size:.93rem; line-height:1.6; color:var(--ink-soft);}
+  .rec-list{list-style:none; margin:0 0 30px; padding:0; display:grid; gap:12px;}
+  .rec-list li{display:flex; gap:12px; align-items:flex-start; font-size:.94rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-sm); padding:13px 15px;}
+  .rec-list li svg{width:18px; height:18px; flex:0 0 auto; margin-top:2px; color:var(--blue-600);}
+
+  /* dashboard */
+  .dash-summary{display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:36px;}
+  @media (max-width:760px){ .dash-summary{grid-template-columns:1fr;} }
+  .person-card{border:1px solid var(--line); border-radius:var(--radius-md); padding:22px; background:var(--bg); position:relative;}
+  .person-card.rank-1{border-color:var(--high);}
+  .person-card h4{margin:0 0 2px; font-size:1.05rem; color:var(--ink);}
+  .person-card .rel{font-size:.78rem; color:var(--ink-soft); font-weight:600; margin-bottom:14px;}
+  .chart-wrap{background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-md); padding:26px; margin-bottom:16px;}
+  .chart-wrap canvas{max-height:260px;}
+
+  /* ---------- RECOMMENDATION mini engine strip inside result ---------- */
+  .risk-low{background:var(--low-bg); color:var(--low);}
+  .risk-medium{background:var(--med-bg); color:var(--med);}
+  .risk-high{background:var(--high-bg); color:var(--high);}
+
+  /* ---------- PACKAGES ---------- */
+  .pkg-card{display:flex; flex-direction:column; border:1px solid var(--line); border-radius:var(--radius-lg); padding:32px; background:var(--card); position:relative;}
+  .pkg-card.featured{border-color:var(--blue-500); box-shadow:var(--shadow);}
+  .pkg-tag{position:absolute; top:-13px; left:28px; background:var(--blue-600); color:#fff; font-size:.74rem; font-weight:800; padding:5px 12px; border-radius:999px;}
+  .pkg-card h3{margin:0 0 6px; font-size:1.25rem; color:var(--ink);}
+  .pkg-card .pkg-audience{font-size:.88rem; color:var(--ink-soft); margin:0 0 18px;}
+  .pkg-price{font-family:'Manrope'; font-size:1.9rem; font-weight:800; color:var(--ink); margin-bottom:18px;}
+  .pkg-price sup{font-size:.9rem; color:var(--ink-soft); font-weight:600;}
+  .pkg-list{list-style:none; margin:0 0 26px; padding:0; display:grid; gap:11px; flex:1;}
+  .pkg-list li{display:flex; gap:10px; font-size:.9rem; color:var(--ink-soft);}
+  .pkg-list li svg{width:17px; height:17px; color:var(--blue-600); flex:0 0 auto; margin-top:2px;}
+  .pkg-cta{width:100%; padding:13px; border-radius:999px; font-weight:700; border:1.5px solid var(--blue-600); background:transparent; color:var(--blue-600); cursor:pointer;}
+  .pkg-card.featured .pkg-cta{background:var(--blue-600); color:#fff; border-color:var(--blue-600);}
+
+  /* ---------- JOURNEY ---------- */
+  .journey-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg); padding:32px; margin-bottom:28px;}
+  .journey-card h3{margin:0 0 4px; font-size:1.2rem; color:var(--ink);}
+  .journey-card .journey-tag{font-size:.85rem; color:var(--blue-600); font-weight:700; margin:0 0 22px;}
+  .journey-flow{display:flex; gap:14px; flex-wrap:wrap; align-items:stretch;}
+  .journey-step{flex:1; min-width:160px; background:var(--bg); border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; position:relative;}
+  .journey-step .num{width:26px; height:26px; border-radius:8px; background:var(--ink); color:#fff; font-family:'Manrope'; font-weight:800; font-size:.8rem; display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
+  .journey-step p{margin:0; font-size:.88rem; color:var(--ink-soft); line-height:1.45;}
+  .journey-step.branch-a{border-color:var(--low);}
+  .journey-step.branch-b{border-color:var(--high);}
+  .journey-fork{display:flex; gap:14px; flex:1 1 100%;}
+  @media (max-width:700px){ .journey-flow{flex-direction:column;} .journey-fork{flex-direction:column;} }
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--ink); color:#EAF1FF; padding:56px 0 calc(30px + env(safe-area-inset-bottom,0px));}
+  footer .wrap{display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:36px;}
+  @media (max-width:700px){ footer .wrap{grid-template-columns:1fr;} }
+  footer h5{margin:0 0 14px; font-size:.9rem; color:#9FB4E0;}
+  footer p{color:#B9C7EA; font-size:.9rem; line-height:1.6; margin:0;}
+  footer .brand{color:#fff; margin-bottom:14px;}
+  footer ul{list-style:none; margin:0; padding:0; display:grid; gap:10px;}
+  footer a{text-decoration:none; color:#CBD8F5; font-size:.9rem;}
+  .disclaimer-strip{border-top:1px solid rgba(255,255,255,.12); margin-top:40px; padding-top:22px; font-size:.78rem; color:#8FA3D0; line-height:1.6;}
+
+  /* ---------- MODAL ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(10,20,50,.55); backdrop-filter:blur(3px); z-index:200;
+    display:none; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-backdrop.open{display:flex;}
+  .modal{background:var(--card); border-radius:var(--radius-lg); padding:34px; max-width:420px; width:100%; box-shadow:var(--shadow); position:relative;}
+  .modal h3{margin:0 0 8px; color:var(--ink);}
+  .modal p{margin:0 0 20px; color:var(--ink-soft); font-size:.92rem;}
+  .modal .field{margin-bottom:16px;}
+  .modal-close{position:absolute; top:16px; right:16px; background:none; border:none; cursor:pointer; color:var(--ink-soft);}
+  .success-check{width:52px; height:52px; border-radius:50%; background:var(--low-bg); color:var(--low); display:flex; align-items:center; justify-content:center; margin-bottom:16px;}
+
+  ::selection{background:var(--blue-100); color:var(--blue-700);}
+  .sr-only{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+  :focus-visible{outline:2px solid var(--blue-500); outline-offset:2px;}
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important; animation:none !important; scroll-behavior:auto !important;} }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 40 40" fill="none">
+        <rect x="4" y="12" width="32" height="16" rx="8" fill="var(--blue-600)"/>
+        <rect x="14" y="6" width="12" height="10" rx="4" fill="var(--ink)"/>
+        <path d="M10 20h5l2.5-5 3 10 2.5-7h6.5" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      StrokeGuard
+    </div>
+    <nav>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#problem">The Problem</a></li>
+        <li><a href="#solution">How It Works</a></li>
+        <li><a href="#assessment">Assessment</a></li>
+        <li><a href="#packages">Packages</a></li>
+        <li><a href="#journey">Stories</a></li>
+      </ul>
+    </nav>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="nav-cta" onclick="goToAssessment()">Start Assessment</button>
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-inner">
+    <div>
+      <div class="eyebrow-pill"><span class="dot"></span>Worn on the wrist. Built around the BEFAST Arm Test.</div>
+      <h1 class="hero-title">Protect your family from stroke risks</h1>
+      <p class="hero-sub">A wearable device that helps families perform early stroke risk screening from home — so the first warning sign is never the only one.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="goToAssessment()">Start Assessment</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('solution').scrollIntoView()">Learn More</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><b>60s</b><span>To complete an arm screening</span></div>
+        <div class="hero-stat"><b>3</b><span>Family members tracked at once</span></div>
+        <div class="hero-stat"><b>24/7</b><span>Passive motion monitoring</span></div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <div class="float-chip a">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--low)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+        Arms symmetrical
+      </div>
+      <div class="device-card">
+        <svg class="pulse-line" viewBox="0 0 340 70" fill="none">
+          <path d="M0 35 H90 L105 10 L120 60 L135 20 L150 45 L165 35 H340" stroke="var(--blue-500)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="device-badges">
+          <span class="device-badge">Motion sensors</span>
+          <span class="device-badge">On-device AI</span>
+          <span class="device-badge">Family sync</span>
+        </div>
+      </div>
+      <div class="float-chip b">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" stroke-width="2"><path d="M12 2v6M12 16v6M4.9 4.9l4.2 4.2M14.9 14.9l4.2 4.2M2 12h6M16 12h6M4.9 19.1l4.2-4.2M14.9 9.1l4.2-4.2"/></svg>
+        Screening in progress
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROBLEM ================= -->
+<section id="problem">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">The problem</p>
+      <h2>Stroke rarely gives a warning</h2>
+      <p>It arrives fast, often in the middle of an ordinary afternoon, and the people most at risk are frequently the ones least able to catch it in time.</p>
+    </div>
+    <div class="grid grid-4">
+      <div class="card stat-card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 L4 14h6l-1 8 9-12h-6z"/></svg></div>
+        <b>Sudden onset</b>
+        <p>Stroke symptoms can appear within seconds, with no prior illness to signal that something is wrong.</p>
+      </div>
+      <div class="card stat-card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 10s1-2 3-2 3 2 3 2M9 15s1 1 3 1 3-1 3-1"/></svg></div>
+        <b>Signs go unnoticed</b>
+        <p>Facial drooping or arm weakness is easy to mistake for tiredness, especially when no one else is around to notice.</p>
+      </div>
+      <div class="card stat-card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21v-6a8 8 0 0116 0v6M12 3v4"/></svg></div>
+        <b>Aging alone</b>
+        <p>A growing share of older parents live by themselves, with no one nearby during the hours that matter most.</p>
+      </div>
+      <div class="card stat-card">
+        <div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></div>
+        <b>Can't watch 24/7</b>
+        <p>Adult children want to help, but work, distance, and daily life make constant in-person monitoring impossible.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SOLUTION ================= -->
+<section id="solution">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">The solution</p>
+      <h2>StrokeGuard turns a simple arm test into an early signal</h2>
+      <p>Built on the arm-weakness check from the BEFAST method, worn every day, and read in under a minute.</p>
+    </div>
+    <div class="workflow">
+      <div class="flow-step"><div class="flow-num">1</div><h4>Raise both arms</h4><p>The wearer lifts both arms shoulder-height, guided by a short prompt on the device or app.</p></div>
+      <div class="flow-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><div class="flow-num">2</div><h4>Motion sensors measure movement</h4><p>Onboard accelerometers compare drift, tremor, and drop speed between the left and right arm.</p></div>
+      <div class="flow-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><div class="flow-num">3</div><h4>AI analysis</h4><p>An on-device model compares the pattern against known signs of one-sided weakness.</p></div>
+      <div class="flow-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      <div class="flow-step"><div class="flow-num">4</div><h4>Risk screening result</h4><p>A clear result — normal, or seek medical attention — is sent to the wearer and their linked family members.</p></div>
+    </div>
+
+    <div class="device-feature-row">
+      <div>
+        <svg viewBox="0 0 400 260" width="100%" role="img" aria-label="Wearable device diagram">
+          <rect x="40" y="40" width="320" height="180" rx="24" fill="var(--blue-050)" stroke="var(--line)"/>
+          <rect x="150" y="70" width="100" height="120" rx="20" fill="var(--card)" stroke="var(--blue-500)" stroke-width="2"/>
+          <circle cx="200" cy="130" r="26" fill="var(--blue-100)" stroke="var(--blue-500)" stroke-width="2"/>
+          <path d="M188 130 h9 l5 -14 l7 24 l6 -16 l5 6 h5" stroke="var(--blue-600)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          <rect x="170" y="58" width="60" height="10" rx="5" fill="var(--ink)"/>
+          <rect x="170" y="192" width="60" height="10" rx="5" fill="var(--ink)"/>
+        </svg>
+      </div>
+      <ul class="feature-list">
+        <li><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg></div><div><h5>Continuous motion sensing</h5><p>Tracks daily arm symmetry passively, not just during a manual test.</p></div></li>
+        <li><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12h8M12 8v8"/></svg></div><div><h5>One-tap arm test</h5><p>A guided 60-second check the wearer can run any time they feel off.</p></div></li>
+        <li><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M13 7a4 4 0 11-8 0 4 4 0 018 0zM21 7a4 4 0 11-4-4"/></svg></div><div><h5>Family sync</h5><p>Results reach linked family members so no one is monitoring alone.</p></div></li>
+        <li><div class="icon-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg></div><div><h5>Screening, not diagnosis</h5><p>Every result nudges toward professional care rather than replacing it.</p></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ASSESSMENT ================= -->
+<section id="assessment">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Family risk assessment</p>
+      <h2>See your family's stroke risk, one person at a time</h2>
+      <p>Answer once per person. StrokeGuard estimates a preliminary risk level and tells you what to do next.</p>
+    </div>
+
+    <div class="progress-rail" id="progressRail"></div>
+
+    <div class="assessment-panel">
+
+      <!-- INTRO -->
+      <div class="panel-step" id="step-intro">
+        <h3 class="panel-heading">Before you begin</h3>
+        <p class="panel-sub">This takes about 2 minutes per family member. Your answers stay in this session only.</p>
+        <div class="result-explain">This assessment is an educational screening tool. It does not diagnose stroke or any medical condition — always consult a clinician for a real diagnosis.</div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" onclick="showStep('self-form')">Begin with yourself</button>
+        </div>
+      </div>
+
+      <!-- SELF FORM -->
+      <div class="panel-step panel-hidden" id="step-self-form">
+        <h3 class="panel-heading">Step 1 · Your information</h3>
+        <p class="panel-sub">Tell us a bit about yourself so we can screen your own risk first.</p>
+        <form id="formSelf" onsubmit="return handleSubmit(event,'self')"></form>
+      </div>
+
+      <!-- SELF RESULT -->
+      <div class="panel-step panel-hidden" id="step-self-result">
+        <div id="result-self"></div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" onclick="showStep('father-form')">Assess parent</button>
+        </div>
+      </div>
+
+      <!-- FATHER FORM -->
+      <div class="panel-step panel-hidden" id="step-father-form">
+        <h3 class="panel-heading">Step 2 · Father's information</h3>
+        <p class="panel-sub">Enter your father's details as accurately as you can.</p>
+        <form id="formFather" onsubmit="return handleSubmit(event,'father')"></form>
+      </div>
+
+      <!-- FATHER RESULT -->
+      <div class="panel-step panel-hidden" id="step-father-result">
+        <div id="result-father"></div>
+        <div class="panel-actions">
+          <button class="btn btn-ghost" onclick="showStep('dashboard')">Skip to dashboard</button>
+          <button class="btn btn-primary" onclick="showStep('mother-form')">Assess another parent</button>
+        </div>
+      </div>
+
+      <!-- MOTHER FORM -->
+      <div class="panel-step panel-hidden" id="step-mother-form">
+        <h3 class="panel-heading">Step 2 · Mother's information</h3>
+        <p class="panel-sub">Enter your mother's details as accurately as you can.</p>
+        <form id="formMother" onsubmit="return handleSubmit(event,'mother')"></form>
+      </div>
+
+      <!-- MOTHER RESULT -->
+      <div class="panel-step panel-hidden" id="step-mother-result">
+        <div id="result-mother"></div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" onclick="showStep('dashboard')">View family dashboard</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="panel-step panel-hidden" id="step-dashboard">
+        <h3 class="panel-heading">Family dashboard</h3>
+        <p class="panel-sub">A side-by-side view of everyone you've assessed so far.</p>
+        <div class="dash-summary" id="dashSummary"></div>
+        <div class="chart-wrap"><canvas id="riskChart" height="90"></canvas></div>
+        <div class="panel-actions" style="justify-content:space-between;">
+          <button class="btn btn-ghost" onclick="resetAssessment()">Start over</button>
+          <button class="btn btn-primary" onclick="document.getElementById('packages').scrollIntoView()">See recommended packages</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= PACKAGES ================= -->
+<section id="packages">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Recommended package</p>
+      <h2>Choose how your family stays covered</h2>
+      <p>Every package includes the wearable device, the companion app, and ongoing screening support.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="pkg-card">
+        <h3>Personal</h3>
+        <p class="pkg-audience">For individual users tracking their own risk factors.</p>
+        <div class="pkg-price">1 device</div>
+        <ul class="pkg-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>One StrokeGuard wearable</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Daily motion monitoring</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>On-demand arm test</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Personal risk dashboard</li>
+        </ul>
+        <button class="pkg-cta" onclick="openInterest('Personal')">Get Personal</button>
+      </div>
+      <div class="pkg-card featured">
+        <div class="pkg-tag">Most chosen by families</div>
+        <h3>Family</h3>
+        <p class="pkg-audience">For adult children monitoring parents alongside themselves.</p>
+        <div class="pkg-price">Up to 3 devices</div>
+        <ul class="pkg-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Devices for you and both parents</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Shared family dashboard</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Alerts sent to every linked member</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Priority screening support</li>
+        </ul>
+        <button class="pkg-cta" onclick="openInterest('Family')">Get Family</button>
+      </div>
+      <div class="pkg-card">
+        <h3>Sponsored</h3>
+        <p class="pkg-audience">CSR-supported units for elderly people with financial difficulties.</p>
+        <div class="pkg-price">Discounted / free</div>
+        <ul class="pkg-list">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Eligible low-income or elderly individuals</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Delivered through community and healthcare partners</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Application reviewed with local partners</li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>Same monitoring features as Personal</li>
+        </ul>
+        <button class="pkg-cta" onclick="openInterest('Sponsored')">Apply for Sponsorship</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= JOURNEY ================= -->
+<section id="journey">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Customer journeys</p>
+      <h2>How families actually find StrokeGuard</h2>
+    </div>
+
+    <div class="journey-card">
+      <h3>Scenario 1 — An elderly person discovers StrokeGuard</h3>
+      <p class="journey-tag">Through a hospital, community health event, or senior citizen association</p>
+      <div class="journey-flow">
+        <div class="journey-step"><div class="num">1</div><p>Learns about StrokeGuard at a hospital visit, health fair, or senior association meeting.</p></div>
+        <div class="journey-step"><div class="num">2</div><p>Considers whether the device fits their budget right now.</p></div>
+        <div class="journey-fork">
+          <div class="journey-step branch-a"><div class="num">3a</div><p><strong>Financially capable</strong> — purchases the Personal package directly.</p></div>
+          <div class="journey-step branch-b"><div class="num">3b</div><p><strong>Unable to afford it</strong> — applies for the Sponsored package through a partner organization.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="journey-card">
+      <h3>Scenario 2 — An adult child assesses the whole family</h3>
+      <p class="journey-tag">Starting from concern for their parents' health</p>
+      <div class="journey-flow">
+        <div class="journey-step"><div class="num">1</div><p>Completes the family assessment for themselves and both parents.</p></div>
+        <div class="journey-step"><div class="num">2</div><p>Sees each parent's risk score and category on the family dashboard.</p></div>
+        <div class="journey-step"><div class="num">3</div><p>Purchases a StrokeGuard Family package to cover both parents.</p></div>
+        <div class="journey-step"><div class="num">4</div><p>Adds a device for themselves too, if their own result shows risk factors like weight, blood pressure, stress, smoking, or low activity.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand">StrokeGuard</div>
+      <p>A wearable screening companion built around the BEFAST arm test, designed to help families notice stroke warning signs earlier — and act on them.</p>
+    </div>
+    <div>
+      <h5>Explore</h5>
+      <ul>
+        <li><a href="#problem">The Problem</a></li>
+        <li><a href="#solution">How It Works</a></li>
+        <li><a href="#assessment">Assessment</a></li>
+        <li><a href="#packages">Packages</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>Support</h5>
+      <ul>
+        <li><a href="#journey">Sponsorship program</a></li>
+        <li><a href="#" onclick="openInterest('General inquiry'); return false;">Talk to our team</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap disclaimer-strip">
+    StrokeGuard is a preliminary self-screening tool and is not a medical device intended to diagnose stroke or any other condition. If you or someone near you shows sudden signs of facial drooping, arm weakness, speech difficulty, or vision or balance changes, treat it as a medical emergency and seek immediate care.
+  </div>
+</footer>
+
+<!-- ================= INTEREST MODAL ================= -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()" aria-label="Close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ============ NAV ============ */
+document.getElementById('navToggle').addEventListener('click', ()=>{
+  document.getElementById('navLinks').classList.toggle('open');
+});
+document.querySelectorAll('.nav-links a').forEach(a=>a.addEventListener('click', ()=>{
+  document.getElementById('navLinks').classList.remove('open');
+}));
+
+function goToAssessment(){
+  document.getElementById('assessment').scrollIntoView();
+  showStep('intro');
+}
+
+/* ============ FORM DEFINITIONS ============ */
+const FIELD_DEFS = [
+  {type:'grid2', fields:[
+    {id:'age', label:'Age', kind:'number', placeholder:'e.g. 45', min:1, max:120},
+    {id:'gender', label:'Gender', kind:'seg', options:[['male','Male'],['female','Female']]},
+  ]},
+  {type:'grid2', fields:[
+    {id:'height', label:'Height (cm)', kind:'number', placeholder:'e.g. 165', min:50, max:250},
+    {id:'weight', label:'Weight (kg)', kind:'number', placeholder:'e.g. 60', min:20, max:300},
+  ]},
+  {type:'grid2', fields:[
+    {id:'smoking', label:'Smoking status', kind:'seg', options:[['no','Non-smoker'],['yes','Smoker']]},
+    {id:'hypertension', label:'High blood pressure', kind:'seg', options:[['no','No'],['yes','Yes']]},
+  ]},
+  {type:'grid2', fields:[
+    {id:'diabetes', label:'Diabetes', kind:'seg', options:[['no','No'],['yes','Yes']]},
+    {id:'heartDisease', label:'Heart disease', kind:'seg', options:[['no','No'],['yes','Yes']]},
+  ]},
+  {type:'grid2', fields:[
+    {id:'exercise', label:'Exercise frequency', kind:'select', options:[['none','Rarely / never'],['low','1–2 times a week'],['moderate','3–4 times a week'],['high','5+ times a week']]},
+    {id:'stress', label:'Stress level', kind:'select', options:[['low','Low'],['medium','Medium'],['high','High']]},
+  ]},
+];
+
+function renderForm(formEl, personKey){
+  formEl.innerHTML='';
+  const grid = document.createElement('div');
+  grid.className='form-grid';
+  FIELD_DEFS.forEach(row=>{
+    row.fields.forEach(f=>{
+      const wrap = document.createElement('div');
+      wrap.className='field';
+      const label = document.createElement('label');
+      label.textContent = f.label;
+      label.setAttribute('for', personKey+'-'+f.id);
+      wrap.appendChild(label);
+      if(f.kind==='number'){
+        const input = document.createElement('input');
+        input.type='number'; input.id=personKey+'-'+f.id; input.name=f.id;
+        input.placeholder=f.placeholder; input.min=f.min; input.max=f.max; input.required=true;
+        wrap.appendChild(input);
+      } else if(f.kind==='select'){
+        const select = document.createElement('select');
+        select.id=personKey+'-'+f.id; select.name=f.id; select.required=true;
+        const blank = document.createElement('option'); blank.value=''; blank.textContent='Select...'; blank.disabled=true; blank.selected=true;
+        select.appendChild(blank);
+        f.options.forEach(([val,txt])=>{
+          const opt=document.createElement('option'); opt.value=val; opt.textContent=txt; select.appendChild(opt);
+        });
+        wrap.appendChild(select);
+      } else if(f.kind==='seg'){
+        const seg = document.createElement('div');
+        seg.className='seg'; seg.dataset.name=f.id; seg.id=personKey+'-'+f.id;
+        f.options.forEach(([val,txt],i)=>{
+          const btn=document.createElement('button');
+          btn.type='button'; btn.textContent=txt; btn.dataset.value=val;
+          if(i===0) btn.classList.add('selected');
+          btn.onclick=()=>{ seg.querySelectorAll('button').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); };
+          seg.appendChild(btn);
+        });
+        wrap.appendChild(seg);
+      }
+      grid.appendChild(wrap);
+    });
+  });
+  formEl.appendChild(grid);
+  const err = document.createElement('div');
+  err.className='form-error'; err.id=personKey+'-error';
+  err.textContent='Please complete every field before continuing.';
+  formEl.appendChild(err);
+  const actions = document.createElement('div');
+  actions.className='panel-actions';
+  const submitBtn = document.createElement('button');
+  submitBtn.type='submit'; submitBtn.className='btn btn-primary';
+  submitBtn.textContent = personKey==='self' ? 'See my risk' : (personKey==='father' ? "See father's risk" : "See mother's risk");
+  actions.appendChild(submitBtn);
+  formEl.appendChild(actions);
+}
+renderForm(document.getElementById('formSelf'),'self');
+renderForm(document.getElementById('formFather'),'father');
+renderForm(document.getElementById('formMother'),'mother');
+
+/* ============ STEP NAVIGATION ============ */
+const STEP_ORDER = ['intro','self-form','self-result','father-form','father-result','mother-form','mother-result','dashboard'];
+const PROGRESS_STEPS = [
+  {key:'self', label:'You'},
+  {key:'father', label:'Father'},
+  {key:'mother', label:'Mother'},
+  {key:'dashboard', label:'Dashboard'},
+];
+let currentStep = 'intro';
+let motherIncluded = false;
+
+function showStep(step){
+  currentStep = step;
+  STEP_ORDER.forEach(s=>{
+    document.getElementById('step-'+s).classList.add('panel-hidden');
+  });
+  document.getElementById('step-'+step).classList.remove('panel-hidden');
+  if(step==='mother-form') motherIncluded = true;
+  renderProgress();
+  document.querySelector('.assessment-panel').scrollIntoView({block:'center'});
+}
+
+function renderProgress(){
+  const rail = document.getElementById('progressRail');
+  rail.innerHTML='';
+  const activeGroup = currentStep.split('-')[0]==='self' ? 'self' : (currentStep.split('-')[0]==='father'? 'father' : (currentStep.split('-')[0]==='mother' ? 'mother' : (currentStep==='dashboard' ? 'dashboard' : null)));
+  const order = ['self','father']; if(motherIncluded) order.push('mother'); order.push('dashboard');
+  const doneSet = new Set();
+  if(people.self) doneSet.add('self');
+  if(people.father) doneSet.add('father');
+  if(people.mother) doneSet.add('mother');
+  order.forEach((key,i)=>{
+    const meta = PROGRESS_STEPS.find(p=>p.key===key);
+    const dot = document.createElement('div');
+    dot.className='progress-dot';
+    if(key===activeGroup) dot.classList.add('active');
+    else if(doneSet.has(key) || (key==='dashboard' && currentStep==='dashboard')) dot.classList.add('done');
+    dot.innerHTML = '<span class="num">'+(i+1)+'</span>'+meta.label;
+    rail.appendChild(dot);
+    if(i<order.length-1){
+      const c=document.createElement('div'); c.className='progress-connector'; rail.appendChild(c);
+    }
+  });
+}
+renderProgress();
+
+/* ============ RISK ENGINE ============ */
+let people = {self:null, father:null, mother:null};
+
+function computeRisk(data){
+  const heightM = data.height/100;
+  const bmi = data.weight / (heightM*heightM);
+  let score = 0;
+  if(data.age>=75) score+=22; else if(data.age>=60) score+=16; else if(data.age>=45) score+=8;
+  if(bmi>=35) score+=18; else if(bmi>=30) score+=12; else if(bmi>=25) score+=6;
+  if(data.gender==='male') score+=3;
+  if(data.smoking==='yes') score+=18;
+  if(data.hypertension==='yes') score+=20;
+  if(data.diabetes==='yes') score+=14;
+  if(data.heartDisease==='yes') score+=20;
+  if(data.exercise==='none') score+=12; else if(data.exercise==='low') score+=6; else if(data.exercise==='high') score-=6;
+  if(data.stress==='high') score+=10; else if(data.stress==='medium') score+=5;
+  score = Math.max(2, Math.min(100, Math.round(score)));
+  let category = 'low';
+  if(score>=60) category='high'; else if(score>=30) category='medium';
+  return {...data, bmi:Math.round(bmi*10)/10, score, category};
+}
+
+const RECOMMENDATIONS = {
+  low: ['Keep up regular exercise, at least three sessions a week.', 'Maintain a balanced diet with less salt and saturated fat.', 'Repeat this screening every few months to track changes.'],
+  medium: ['Monitor blood pressure at home on a regular schedule.', 'Improve diet quality and reduce sodium intake.', 'Increase physical activity gradually, aiming for daily movement.'],
+  high: ['Seek medical consultation as soon as possible.', 'Ask a doctor about further cardiovascular examinations.', 'Set up regular, ongoing monitoring with StrokeGuard or a clinician.'],
+};
+const EXPLANATIONS = {
+  low: 'Based on the factors entered, current lifestyle and health markers suggest a lower likelihood of stroke risk. Staying consistent with healthy habits keeps it that way.',
+  medium: 'A few factors — such as blood pressure, weight, or activity level — are pushing this risk into a middle range. Small, steady changes now can meaningfully lower it.',
+  high: 'Several combined factors point to a higher preliminary risk. This is not a diagnosis, but it is a strong signal to involve a healthcare professional soon.',
+};
+
+function readForm(personKey){
+  const data = {};
+  ['age','height','weight'].forEach(id=>{
+    data[id] = parseFloat(document.getElementById(personKey+'-'+id).value);
+  });
+  ['gender','smoking','hypertension','diabetes','heartDisease'].forEach(id=>{
+    const seg = document.getElementById(personKey+'-'+id);
+    const sel = seg.querySelector('button.selected');
+    data[id] = sel ? sel.dataset.value : null;
+  });
+  ['exercise','stress'].forEach(id=>{
+    data[id] = document.getElementById(personKey+'-'+id).value;
+  });
+  return data;
+}
+
+function validate(data){
+  for(const k in data){
+    if(data[k]===null || data[k]==='' || Number.isNaN(data[k])) return false;
+  }
+  return true;
+}
+
+function handleSubmit(evt, personKey){
+  evt.preventDefault();
+  const data = readForm(personKey);
+  const errEl = document.getElementById(personKey+'-error');
+  if(!validate(data)){ errEl.style.display='block'; return false; }
+  errEl.style.display='none';
+  const result = computeRisk(data);
+  people[personKey] = result;
+  renderResult(personKey, result);
+  showStep(personKey+'-result');
+  return false;
+}
+
+function renderResult(personKey, r){
+  const labelMap = {self:'You', father:'Father', mother:'Mother'};
+  const catLabel = {low:'Low risk', medium:'Medium risk', high:'High risk'};
+  const container = document.getElementById('result-'+personKey);
+  container.innerHTML = `
+    <div class="result-head">
+      <div class="risk-ring risk-${r.category}"><span>${r.score}</span></div>
+      <div>
+        <p class="result-name">${labelMap[personKey]}</p>
+        <h3 class="result-title">${catLabel[r.category]} for stroke</h3>
+        <p class="result-score">Risk score ${r.score} / 100 · BMI ${r.bmi}</p>
+      </div>
+    </div>
+    <div class="result-explain">${EXPLANATIONS[r.category]}</div>
+    <h4 style="margin:0 0 14px; font-size:1rem; color:var(--ink);">Recommendations</h4>
+    <ul class="rec-list">
+      ${RECOMMENDATIONS[r.category].map(t=>`<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>${t}</li>`).join('')}
+    </ul>
+  `;
+}
+
+/* ============ DASHBOARD ============ */
+let chartInstance = null;
+function renderDashboard(){
+  const labelMap = {self:'You', father:'Father', mother:'Mother'};
+  const order = ['self','father','mother'].filter(k=>people[k]);
+  const sorted = [...order].sort((a,b)=>people[b].score - people[a].score);
+
+  const summaryEl = document.getElementById('dashSummary');
+  summaryEl.innerHTML = sorted.map((key,i)=>{
+    const r = people[key];
+    const catLabel = {low:'Low risk', medium:'Medium risk', high:'High risk'};
+    return `
+      <div class="person-card ${i===0 && r.category==='high' ? 'rank-1':''}">
+        <h4>${labelMap[key]}</h4>
+        <p class="rel">${key==='self' ? 'Primary user' : 'Parent'}</p>
+        <div class="risk-ring risk-${r.category}" style="width:64px;height:64px;font-size:1.1rem;margin-bottom:12px;"><span>${r.score}</span></div>
+        <span class="badge-pill risk-${r.category}">${catLabel[r.category]}</span>
+        <p style="margin:14px 0 0; font-size:.85rem; color:var(--ink-soft); line-height:1.5;">${RECOMMENDATIONS[r.category][0]}</p>
+      </div>
+    `;
+  }).join('');
+
+  const ctx = document.getElementById('riskChart').getContext('2d');
+  const colors = order.map(k=>{
+    const c = people[k].category;
+    return c==='high' ? getCss('--high') : c==='medium' ? getCss('--med') : getCss('--low');
+  });
+  if(chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: order.map(k=>labelMap[k]),
+      datasets:[{ label:'Risk score', data: order.map(k=>people[k].score), backgroundColor: colors, borderRadius:10, maxBarThickness:64 }]
+    },
+    options:{
+      responsive:true,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:(c)=> 'Risk score: '+c.parsed.y+' / 100'}} },
+      scales:{ y:{ beginAtZero:true, max:100, grid:{color:getCss('--line')}, ticks:{color:getCss('--ink-soft')} },
+               x:{ grid:{display:false}, ticks:{color:getCss('--ink-soft'), font:{weight:'600'}} } }
+    }
+  });
+}
+function getCss(varName){ return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
+
+const dashboardObserver = new MutationObserver(()=>{
+  if(currentStep==='dashboard') renderDashboard();
+});
+document.addEventListener('DOMContentLoaded', ()=>{});
+
+/* hook dashboard render whenever step shown */
+const _origShowStep = showStep;
+showStep = function(step){
+  _origShowStep(step);
+  if(step==='dashboard') renderDashboard();
+};
+
+function resetAssessment(){
+  people = {self:null, father:null, mother:null};
+  motherIncluded = false;
+  document.getElementById('formSelf').reset();
+  document.getElementById('formFather').reset();
+  document.getElementById('formMother').reset();
+  renderForm(document.getElementById('formSelf'),'self');
+  renderForm(document.getElementById('formFather'),'father');
+  renderForm(document.getElementById('formMother'),'mother');
+  showStep('intro');
+}
+
+/* ============ PACKAGE INTEREST MODAL ============ */
+function openInterest(pkgName){
+  const body = document.getElementById('modalBody');
+  body.innerHTML = `
+    <h3>Get started with ${pkgName}</h3>
+    <p>Leave your contact details and our team will follow up about the ${pkgName} package.</p>
+    <form onsubmit="return submitInterest(event)">
+      <div class="field"><label for="int-name">Full name</label><input type="text" id="int-name" required></div>
+      <div class="field"><label for="int-contact">Email or phone</label><input type="text" id="int-contact" required></div>
+      <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Submit interest</button>
+    </form>
+  `;
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+function submitInterest(evt){
+  evt.preventDefault();
+  const name = document.getElementById('int-name').value;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="success-check"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></div>
+    <h3>Thanks, ${name.split(' ')[0] || 'there'}!</h3>
+    <p>This is a demo — in a live version, our team would reach out shortly to continue your StrokeGuard journey.</p>
+    <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="closeModal()">Close</button>
+  `;
+  return false;
+}
+function closeModal(){ document.getElementById('modalBackdrop').classList.remove('open'); }
+document.getElementById('modalBackdrop').addEventListener('click', (e)=>{ if(e.target.id==='modalBackdrop') closeModal(); });
+</script>
+</body>
+</html>
